@@ -144,9 +144,12 @@ async function callGemini(parts: unknown[]): Promise<string> {
       })
       if (res.ok) {
         const data = await res.json()
-        return data?.choices?.[0]?.message?.content || ''
+        const content = data?.choices?.[0]?.message?.content || ''
+        console.log('OpenAI direct response preview:', content.slice(0, 300))
+        return content
       }
       const err = await res.json().catch(() => ({}))
+      console.error('OpenAI error:', err)
       throw new Error(err?.error?.message || `OpenAI error ${res.status}`)
     } catch (e: any) {
       if (!PROXY_URL && !DIRECT_KEY) throw e
@@ -303,3 +306,4 @@ User: ${message}`
   const text = await callGemini([{ text: prompt }])
   return text.trim() || 'Could not generate response. Please try again.'
 }
+
