@@ -169,13 +169,13 @@ export function Dashboard() {
               </Button>
             </div>
             <div className="space-y-2">
-              {(currentAnalysis.recommendations?.hairstyles?.slice(0, 3) || currentAnalysis.recommendations?.haircuts?.slice(0, 3) || []).map((rec: string, i: number) => (
+              {((currentAnalysis.recommendations as any)?.hairstyles?.slice(0, 3) || (currentAnalysis.recommendations as any)?.haircuts?.slice(0, 3) || []).map((rec: string, i: number) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#4F8CFF] mt-2 flex-shrink-0" />
                   <p className="text-sm text-white/60 leading-relaxed">{rec}</p>
                 </div>
               ))}
-              {(!currentAnalysis.recommendations?.hairstyles?.length && !currentAnalysis.recommendations?.haircuts?.length) && (
+              {(!(currentAnalysis.recommendations as any)?.hairstyles?.length && !(currentAnalysis.recommendations as any)?.haircuts?.length) && (
                 <p className="text-sm text-white/30">No recommendations available yet.</p>
               )}
             </div>
