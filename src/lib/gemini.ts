@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 // Calls go through backend proxy if VITE_API_URL is set
 // Falls back to direct Gemini call if proxy is unavailable
 const PROXY_URL = import.meta.env.VITE_API_URL || ''
