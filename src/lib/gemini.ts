@@ -1,7 +1,9 @@
 // Direct Gemini call from frontend - works without backend proxy
 const PROXY_URL = import.meta.env.VITE_API_URL || ''
 const DIRECT_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
+const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY || ''
 const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const OPENAI_DIRECT = 'https://api.openai.com/v1/chat/completions'
 
 export interface AnalysisSection {
   label: string
@@ -95,7 +97,64 @@ async function callGemini(parts: unknown[]): Promise<string> {
     generationConfig: { temperature: 0.4, maxOutputTokens: 8192 },
   })
 
-  // Try proxy first
+  // 1. Try OpenAI proxy
+  if (PROXY_URL && OPENAI_KEY) {
+    try {
+      const messages = parts.map((p: any) => {
+        if (p.inline_data) {
+          return { type: 'image_url', image_url: { url: `data:${p.inline_data.mime_type};base64,${p.inline_data.data}` } }
+        }
+        return { type: 'text', text: p.text }
+      })
+      const res = await fetch(`${PROXY_URL}/api/openai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: messages }],
+          max_tokens: 8192,
+          temperature: 0.4,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return data?.choices?.[0]?.message?.content || ''
+      }
+    } catch (e) { console.warn('OpenAI proxy failed:', e) }
+  }
+
+  // 2. Try OpenAI direct (frontend key)
+  if (OPENAI_KEY) {
+    try {
+      const messages = parts.map((p: any) => {
+        if (p.inline_data) {
+          return { type: 'image_url', image_url: { url: `data:${p.inline_data.mime_type};base64,${p.inline_data.data}` } }
+        }
+        return { type: 'text', text: p.text }
+      })
+      const res = await fetch(OPENAI_DIRECT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: messages }],
+          max_tokens: 8192,
+          temperature: 0.4,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return data?.choices?.[0]?.message?.content || ''
+      }
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err?.error?.message || `OpenAI error ${res.status}`)
+    } catch (e: any) {
+      if (!PROXY_URL && !DIRECT_KEY) throw e
+      console.warn('OpenAI direct failed:', e.message)
+    }
+  }
+
+  // 3. Try Gemini proxy
   if (PROXY_URL) {
     try {
       const res = await fetch(`${PROXY_URL}/api/gemini`, {
@@ -110,14 +169,13 @@ async function callGemini(parts: unknown[]): Promise<string> {
       const err = await res.json().catch(() => ({}))
       throw new Error(err?.error || `Proxy error ${res.status}`)
     } catch (e: any) {
-      // If proxy fails and we have a direct key, fall through
       if (!DIRECT_KEY) throw e
-      console.warn('Proxy failed, trying direct:', e.message)
+      console.warn('Gemini proxy failed:', e.message)
     }
   }
 
-  // Direct call (when no proxy or proxy failed)
-  if (!DIRECT_KEY) throw new Error('No API key configured. Add VITE_GEMINI_API_KEY to your .env file.')
+  // 4. Try Gemini direct
+  if (!DIRECT_KEY) throw new Error('No API key configured.')
   const res = await fetch(`${GEMINI_DIRECT}?key=${DIRECT_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
