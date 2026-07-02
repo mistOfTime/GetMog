@@ -259,9 +259,12 @@ export async function analyzeFace(images: File[]): Promise<FacialAnalysisResult>
     }))
   )
   const text = await callGemini([{ text: ANALYSIS_PROMPT }, ...imageParts])
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  console.log('Raw response preview:', text.slice(0, 200))
+  // GPT-4o often wraps JSON in ```json ... ``` markdown blocks
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/) || text.match(/(\{[\s\S]*\})/)
   if (!jsonMatch) throw new Error('Could not parse response. Please try again.')
-  const raw = JSON.parse(jsonMatch[0])
+  const jsonStr = jsonMatch[1] || jsonMatch[0]
+  const raw = JSON.parse(jsonStr)
   // Normalize field names — Gemini sometimes returns snake_case or different names
   return {
     ...raw,
