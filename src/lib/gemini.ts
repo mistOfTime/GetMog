@@ -1,5 +1,4 @@
-// Calls go through backend proxy if VITE_API_URL is set
-// Falls back to direct Gemini call if proxy is unavailable
+// Direct Gemini call from frontend - works without backend proxy
 const PROXY_URL = import.meta.env.VITE_API_URL || ''
 const DIRECT_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
