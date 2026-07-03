@@ -99,4 +99,16 @@ app.post('/api/gemini', async (c) => {
 
 const port = parseInt(process.env.PORT || '3001')
 console.log(`GetMog API server running — ${GEMINI_KEYS.length} Gemini keys loaded`)
+
+// Keep-alive ping every 10 minutes to prevent Render free tier sleep
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || ''
+if (SELF_URL) {
+  setInterval(async () => {
+    try {
+      await fetch(`${SELF_URL}/health`)
+      console.log('Keep-alive ping sent')
+    } catch { /* ignore */ }
+  }, 10 * 60 * 1000)
+}
+
 serve({ fetch: app.fetch, port })
