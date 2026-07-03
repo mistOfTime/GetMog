@@ -31,7 +31,7 @@ export const useProfileStore = create<ProfileState>()(
           // Save to Firestore for cross-device sync
           try {
             const { setDoc, doc } = await import('firebase/firestore')
-            const { db } = await import('./firebase')
+            const { db } = await import('@/lib/firebase')
             await setDoc(doc(db, 'users', userId), { avatarUrl: base64 }, { merge: true })
           } catch { /* ignore if Firestore fails */ }
         } catch {
