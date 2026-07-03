@@ -4,7 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDropzone } from 'react-dropzone'
 import { analyzeFace } from '@/lib/gemini'
 import { useAnalysisStore } from '@/store/analysisStore'
+import { useAuthStore } from '@/store/authStore'
+import { useProfileStore } from '@/store/profileStore'
 import { compressImage } from '@/lib/utils'
+import { saveAnalysisToCloud } from '@/lib/sync'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import {
@@ -33,6 +36,8 @@ const TIPS = [
 export function UploadPage() {
   const navigate = useNavigate()
   const { setCurrentAnalysis, addToHistory, setAnalyzing, isAnalyzing } = useAnalysisStore()
+  const { user } = useAuthStore()
+  const { avatarUrl } = useProfileStore()
   const [photos, setPhotos] = useState<Record<string, File>>({})
   const [previews, setPreviews] = useState<Record<string, string>>({})
   const [activeSlot, setActiveSlot] = useState('front')
@@ -316,12 +321,19 @@ export function UploadPage() {
       clearInterval(interval)
       setProgress(100)
       setCurrentAnalysis(result)
-      addToHistory({
+      const record = {
         id: Date.now().toString(),
         date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         images: Object.values(previews),
         result,
-      })
+      }
+      addToHistory(record)
+
+      // Sync to Firestore so mobile gets the same data
+      if (user) {
+        const { analysisHistory } = useAnalysisStore.getState()
+        saveAnalysisToCloud(user.uid, result, [record, ...analysisHistory], avatarUrl)
+      }
       setTimeout(() => { setAnalyzing(false); navigate('/analysis') }, 500)
     } catch (err: any) {
       setAnalyzing(false)

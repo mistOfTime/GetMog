@@ -17,8 +17,8 @@ export const useProfileStore = create<ProfileState>()(
 
       setAvatarUrl: (url) => set({ avatarUrl: url }),
 
-      // Store avatar as base64 in localStorage — works without Firebase Storage
-      uploadAvatar: async (file: File, _userId: string) => {
+      // Store avatar as base64 in localStorage AND Firestore for cross-device sync
+      uploadAvatar: async (file: File, userId: string) => {
         set({ uploading: true })
         try {
           const reader = new FileReader()
@@ -28,6 +28,12 @@ export const useProfileStore = create<ProfileState>()(
             reader.readAsDataURL(file)
           })
           set({ avatarUrl: base64, uploading: false })
+          // Save to Firestore for cross-device sync
+          try {
+            const { setDoc, doc } = await import('firebase/firestore')
+            const { db } = await import('./firebase')
+            await setDoc(doc(db, 'users', userId), { avatarUrl: base64 }, { merge: true })
+          } catch { /* ignore if Firestore fails */ }
         } catch {
           set({ uploading: false })
         }

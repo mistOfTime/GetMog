@@ -4,6 +4,8 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useAuthStore } from '@/store/authStore'
 import { useProfileStore } from '@/store/profileStore'
+import { useAnalysisStore } from '@/store/analysisStore'
+import { loadAnalysisFromCloud } from '@/lib/sync'
 
 import { LandingPage } from '@/pages/LandingPage'
 import { Dashboard } from '@/pages/Dashboard'
@@ -15,8 +17,9 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { AppLayout } from '@/components/layout/AppLayout'
 
 export default function App() {
-  const { user, setUser, loading, setLoading } = useAuthStore()
-  const { loadAvatar } = useProfileStore()
+  const { user, setUser, setLoading } = useAuthStore()
+  const { setAvatarUrl } = useProfileStore()
+  const { setCurrentAnalysis, addToHistory, currentAnalysis } = useAnalysisStore()
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
@@ -24,9 +27,17 @@ export default function App() {
       setUser(u)
       setLoading(false)
       setChecked(true)
-      // Load avatar from Firebase when user logs in
+
       if (u) {
-        loadAvatar(u.uid)
+        // Load synced data from Firestore on login
+        const cloud = await loadAnalysisFromCloud(u.uid)
+        if (cloud) {
+          if (cloud.avatarUrl) setAvatarUrl(cloud.avatarUrl)
+          if (cloud.currentAnalysis) setCurrentAnalysis(cloud.currentAnalysis)
+          if (cloud.analysisHistory?.length) {
+            cloud.analysisHistory.forEach(r => addToHistory(r))
+          }
+        }
       }
     })
     return unsub
