@@ -37,6 +37,14 @@ export default function App() {
           if (cloud.analysisHistory?.length) {
             cloud.analysisHistory.forEach(r => addToHistory(r))
           }
+        } else {
+          // First time syncing — push local data to cloud
+          const { currentAnalysis: localAnalysis, analysisHistory: localHistory } = useAnalysisStore.getState()
+          const { avatarUrl: localAvatar } = useProfileStore.getState()
+          if (localAnalysis) {
+            const { saveAnalysisToCloud } = await import('@/lib/sync')
+            saveAnalysisToCloud(u.uid, localAnalysis, localHistory, localAvatar)
+          }
         }
       }
     })

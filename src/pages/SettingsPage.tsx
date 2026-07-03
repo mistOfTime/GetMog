@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { updateProfile, updatePassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth'
+import { updateProfile, updatePassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential, signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useAuthStore } from '@/store/authStore'
 import { useAnalysisStore } from '@/store/analysisStore'
@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { useNavigate } from 'react-router-dom'
-import { User, Bell, Shield, Trash2, Key, CheckCircle, Plus, Camera } from 'lucide-react'
+import { User, Bell, Shield, Trash2, Key, CheckCircle, Plus, Camera, LogOut } from 'lucide-react'
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Name too short'),
@@ -284,6 +284,19 @@ export function SettingsPage() {
             <p>Analysis data is stored privately under your account and can be deleted at any time.</p>
             <p>We use Google Gemini AI to process your images. Images are sent to Google's API for analysis only.</p>
           </div>
+        </Card>
+      </motion.div>
+
+      {/* Sign Out — visible on mobile only */}
+      <motion.div variants={item} className="md:hidden">
+        <Card padding="md">
+          <button
+            onClick={async () => { await signOut(auth); setUser(null); navigate('/') }}
+            className="w-full flex items-center gap-3 py-2 text-red-400 hover:text-red-300 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
         </Card>
       </motion.div>
 

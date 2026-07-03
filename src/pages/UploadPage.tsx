@@ -505,7 +505,7 @@ export function UploadPage() {
                 playsInline
                 muted
                 className={cn(
-                  'w-full h-full object-cover',
+                  'w-full h-full object-contain bg-black',
                   facingMode === 'user' ? '-scale-x-100' : '',
                   capturedPreview ? 'hidden' : 'block'
                 )}
