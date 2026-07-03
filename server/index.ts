@@ -41,6 +41,9 @@ app.get('/health', (c) => c.json({
   openai: !!OPENAI_API_KEY,
 }))
 
+// Redirect root to the frontend website
+app.get('/', (c) => c.redirect('https://get-mog.vercel.app', 302))
+
 // OpenAI endpoint
 app.post('/api/openai', async (c) => {
   if (!OPENAI_API_KEY) return c.json({ error: 'OpenAI not configured' }, 500)
